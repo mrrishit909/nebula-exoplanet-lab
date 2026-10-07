@@ -14,7 +14,7 @@ Built from blueprint 05 of the *Advanced Engineering Build Book, Volume VII* as 
 npm ci
 npm run seed                      # systems and the background catalog
 npm run model                     # Blender 4.5: build.py then validate.py (the GLB is committed, so optional)
-npm test                          # 29 domain + API tests
+npm test                          # 30 domain + API tests
 npm run build && node scripts/serve.ts 8671   # static export at http://127.0.0.1:8671
 npm run e2e                       # 21 Playwright tests (needs Google Chrome)
 node apps/api/src/server.ts       # /v1 API on :8670, OpenAPI at /openapi.json

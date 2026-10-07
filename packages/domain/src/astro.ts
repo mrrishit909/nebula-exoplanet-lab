@@ -65,10 +65,14 @@ export function transmissionSpectrum(p: SpectrumInput, wavelengths: number[]): n
   const g = surfaceGravity(p.massEarth, p.radiusEarth), H = scaleHeightKm(p.teqK, p.hydrogenRich ? 2.3 : 28, g), rpKm = p.radiusEarth * 6371, rsKm = p.starRadiusSolar * 695700;
   return wavelengths.map((l) => { let tau = 0; for (const [m, ab] of Object.entries(p.atmosphere)) for (const b of MOLECULES[m]?.bands ?? []) tau += ab * b.s * Math.exp(-0.5 * ((l - b.c) / b.w) ** 2); const h = rpKm + H * (1 + 5 * Math.min(1.5, tau)); return Math.round((h / rsKm) ** 2 * 1e6 * 10) / 10; });
 }
-/** Which molecules stand out: a molecule is detected if the mean depth inside one of its bands exceeds the spectrum's median by `sigma` standard errors of that mean (noise / sqrt(samples in the band)). */
+/** Which molecules stand out. A molecule is judged on its strongest band that falls inside the observed range, so a band it shares with another molecule (carbon dioxide's 2.7 micrometres sits on water's) cannot report it alone: it is detected if the mean depth in that band exceeds the spectrum's median by `sigma` standard errors (noise / sqrt(samples in the band)). */
 export function detectMolecules(spec: number[], wavelengths: number[], noisePpm: number, sigma = 3): { molecule: string; snr: number }[] {
-  const sorted = [...spec].sort((a, b) => a - b), base = sorted[Math.floor(sorted.length / 2)], out: { molecule: string; snr: number }[] = [];
-  for (const [m, def] of Object.entries(MOLECULES)) { let best = 0; for (const b of def.bands) { const inside = spec.filter((_, i) => Math.abs(wavelengths[i] - b.c) <= b.w); if (!inside.length) continue; const mean = inside.reduce((x, y) => x + y, 0) / inside.length; best = Math.max(best, ((mean - base) / Math.max(noisePpm, 1e-9)) * Math.sqrt(inside.length)); } if (best >= sigma) out.push({ molecule: m, snr: Math.round(best * 10) / 10 }); }
+  const sorted = [...spec].sort((a, b) => a - b), base = sorted[Math.floor(sorted.length / 2)], lo = wavelengths[0], hi = wavelengths[wavelengths.length - 1], out: { molecule: string; snr: number }[] = [];
+  for (const [m, def] of Object.entries(MOLECULES)) {
+    const inRange = def.bands.filter((b) => b.c >= lo && b.c <= hi); if (!inRange.length) continue; const b = inRange.reduce((x, y) => (y.s > x.s ? y : x));
+    const inside = spec.filter((_, i) => Math.abs(wavelengths[i] - b.c) <= b.w); if (!inside.length) continue;
+    const mean = inside.reduce((x, y) => x + y, 0) / inside.length, snr = ((mean - base) / Math.max(noisePpm, 1e-9)) * Math.sqrt(inside.length); if (snr >= sigma) out.push({ molecule: m, snr: Math.round(snr * 10) / 10 });
+  }
   return out.sort((a, b) => b.snr - a.snr);
 }
 export const wavelengthGrid = (lo = 0.5, hi = 5.5, n = 400) => Array.from({ length: n }, (_, i) => Math.round((lo * (hi / lo) ** (i / (n - 1))) * 10000) / 10000);

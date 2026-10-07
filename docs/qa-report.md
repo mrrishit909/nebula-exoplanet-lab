@@ -1,6 +1,6 @@
 # QA report
 
-Apple M3 Pro, Chrome stable, Playwright 1.63, WebGL through SwiftShader. Last full runs: 21 e2e passed twice in a row after the final fix; 29 unit and API tests passed.
+Apple M3 Pro, Chrome stable, Playwright 1.63, WebGL through SwiftShader. Last full runs: 21 e2e passed twice in a row after the final fix; 30 unit and API tests passed.
 
 | Matrix row (blueprint 18) | Covered by | Result |
 |---|---|---|
